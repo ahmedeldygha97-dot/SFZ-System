@@ -3,7 +3,7 @@ services:
     name: sfz-system
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build && npx prisma migrate deploy --schema backend/prisma/schema.prisma
+    buildCommand: npm install && npm run build && npm run prisma:push --workspace backend
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
@@ -17,6 +17,8 @@ services:
         sync: false
       - key: APP_BASE_URL
         sync: false
+      - key: CLIENT_URL
+        sync: false
       - key: ADMIN_EMAIL
         value: admin@sfz.local
       - key: ADMIN_PASSWORD
@@ -25,4 +27,3 @@ databases:
   - name: sfz-system-db
     databaseName: sfz_system
     plan: free
-

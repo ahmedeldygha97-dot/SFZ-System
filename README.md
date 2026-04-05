@@ -40,32 +40,45 @@ render.yaml Render Blueprint definition
    cp .env.example .env
    ```
 
-2. Update `DATABASE_URL`, `JWT_SECRET`, `APP_BASE_URL`, and the admin credentials in `.env`.
-
-3. Install dependencies:
+2. Install dependencies:
 
    ```bash
    npm install
    ```
 
-4. Generate Prisma client and apply migrations:
+3. Start a local Prisma Postgres instance for development:
+
+   ```bash
+   npm run db:local:start
+   ```
+
+   Then update `DATABASE_URL` in `.env` with the direct `postgres://...` URL shown by:
+
+   ```bash
+   npm run db:local:list
+   ```
+
+4. Update `JWT_SECRET`, `APP_BASE_URL`, and the admin credentials in `.env`.
+
+5. Generate Prisma client, push the schema, and seed the administrator:
 
    ```bash
    npm run db:generate
-   npx prisma migrate dev --schema backend/prisma/schema.prisma
+   npm run db:push
    npm run db:seed
    ```
 
-5. Start the development servers:
+6. Start the development servers:
 
    ```bash
    npm run dev
    ```
 
-6. Open:
+7. Open:
 
    - Frontend: `http://localhost:5173`
    - Backend health check: `http://localhost:5000/api/health`
+   - Production-style local app after `npm run build` + `npm start`: `http://localhost:5000`
 
 ## Default Administrator
 
@@ -92,5 +105,5 @@ The backend serves the built frontend from `frontend/dist` in production and lis
 
 ## Documentation
 
-- Architecture: [docs/ARCHITECTURE.md](/Users/Eldygha/OneDrive/سطح المكتب/SFZ-System/docs/ARCHITECTURE.md)
-- Deployment guide: [DEPLOYMENT.md](/Users/Eldygha/OneDrive/سطح المكتب/SFZ-System/DEPLOYMENT.md)
+- Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- Deployment guide: [DEPLOYMENT.md](DEPLOYMENT.md)

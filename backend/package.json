@@ -13,6 +13,7 @@
     "prisma:seed": "node prisma/seed.js"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
@@ -23,8 +24,13 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
+    "pg": "^8.20.0",
     "puppeteer": "^24.40.0",
     "qrcode": "^1.5.4",
     "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "prisma": "^7.6.0"
   }
 }

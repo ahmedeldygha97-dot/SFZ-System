@@ -125,33 +125,34 @@ router.post(
     }
 
     const publicId = createPublicId();
+    const licenseNumber = await generateLicenseNumber();
     const verificationUrl = buildVerificationUrl(publicId);
 
-    const result = await prisma.$transaction(async (tx) => {
-      const license = await tx.license.create({
-        data: {
-          companyId: payload.companyId,
-          licenseNumber: await generateLicenseNumber(),
-          publicId,
-          qrCodeUrl: verificationUrl,
-          issueDate: payload.issueDate,
-          expiryDate: payload.expiryDate,
-          feeAmount: payload.feeAmount,
-          notes: payload.notes,
-          status: LicenseStatus.ACTIVE,
-          createdById: req.user.id
-        },
-        include: {
-          company: true,
-          renewals: true
-        }
-      });
+    const result = await prisma.license.create({
+      data: {
+        companyId: payload.companyId,
+        licenseNumber,
+        publicId,
+        qrCodeUrl: verificationUrl,
+        issueDate: payload.issueDate,
+        expiryDate: payload.expiryDate,
+        feeAmount: payload.feeAmount,
+        notes: payload.notes,
+        status: LicenseStatus.ACTIVE,
+        createdById: req.user.id
+      },
+      include: {
+        company: true,
+        renewals: true
+      }
+    });
 
-      if (payload.markAsPaid) {
-        await tx.payment.create({
+    if (payload.markAsPaid) {
+      try {
+        await prisma.payment.create({
           data: {
             companyId: payload.companyId,
-            licenseId: license.id,
+            licenseId: result.id,
             amount: payload.feeAmount,
             method: payload.paymentMethod ?? PaymentMethod.CASH,
             reference: payload.paymentReference,
@@ -159,10 +160,14 @@ router.post(
             recordedById: req.user.id
           }
         });
-      }
+      } catch (paymentError) {
+        await prisma.license.delete({
+          where: { id: result.id }
+        });
 
-      return license;
-    });
+        throw paymentError;
+      }
+    }
 
     await writeAuditLog({
       userId: req.user.id,
@@ -196,8 +201,8 @@ router.patch(
       throw createHttpError(400, "New expiry date must be later than the current expiry date.");
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.licenseRenewal.create({
+    const renewalOperations = [
+      prisma.licenseRenewal.create({
         data: {
           licenseId: existing.id,
           previousExpiryDate: existing.expiryDate,
@@ -206,9 +211,8 @@ router.patch(
           notes: payload.notes,
           processedById: req.user.id
         }
-      });
-
-      await tx.license.update({
+      }),
+      prisma.license.update({
         where: { id: existing.id },
         data: {
           expiryDate: payload.newExpiryDate,
@@ -216,10 +220,12 @@ router.patch(
           notes: payload.notes ?? existing.notes,
           status: LicenseStatus.ACTIVE
         }
-      });
+      })
+    ];
 
-      if (payload.markAsPaid) {
-        await tx.payment.create({
+    if (payload.markAsPaid) {
+      renewalOperations.push(
+        prisma.payment.create({
           data: {
             companyId: existing.companyId,
             licenseId: existing.id,
@@ -229,9 +235,11 @@ router.patch(
             paymentDate: new Date(),
             recordedById: req.user.id
           }
-        });
-      }
-    });
+        })
+      );
+    }
+
+    await prisma.$transaction(renewalOperations);
 
     await writeAuditLog({
       userId: req.user.id,

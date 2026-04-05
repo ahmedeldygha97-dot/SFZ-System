@@ -37,7 +37,7 @@ In production, the backend serves the compiled frontend from `frontend/dist`, wh
 - `INSPECTOR`
 - `VIEWER`
 
-Each role maps to explicit permissions inside [backend/src/config/permissions.js](/Users/Eldygha/OneDrive/سطح المكتب/SFZ-System/backend/src/config/permissions.js).
+Each role maps to explicit permissions inside [backend/src/config/permissions.js](../backend/src/config/permissions.js).
 
 ## PDF and QR Flow
 
@@ -60,6 +60,6 @@ Each role maps to explicit permissions inside [backend/src/config/permissions.js
 
 - One Render web service
 - One Render PostgreSQL database
-- Render Blueprint file in [render.yaml](/Users/Eldygha/OneDrive/سطح المكتب/SFZ-System/render.yaml)
+- Render Blueprint file in [render.yaml](../render.yaml)
 
 This setup keeps the deployment path straightforward while remaining flexible enough to split frontend and backend services later if needed.

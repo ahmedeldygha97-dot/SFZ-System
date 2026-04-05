@@ -2,6 +2,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
+import pg from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, UserRole } from "@prisma/client";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -9,7 +11,13 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-const prisma = new PrismaClient();
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 2
+});
+
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const adminEmail = process.env.ADMIN_EMAIL ?? "admin@sfz.local";

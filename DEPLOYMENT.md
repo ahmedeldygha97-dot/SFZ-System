@@ -18,6 +18,7 @@ This repository includes `render.yaml`, so the recommended path is a Blueprint d
 4. Set the required environment variables before applying the Blueprint:
    - `JWT_SECRET`
    - `APP_BASE_URL`
+   - `CLIENT_URL`
    - `ADMIN_PASSWORD`
 5. `DATABASE_URL` is injected automatically from the managed Render PostgreSQL database.
 
@@ -34,6 +35,7 @@ Set these in Render:
 - `NODE_ENV=production`
 - `JWT_SECRET=<long-random-secret>`
 - `APP_BASE_URL=https://your-service.onrender.com` or your custom domain
+- `CLIENT_URL=https://your-service.onrender.com` or your custom domain
 - `ADMIN_EMAIL=admin@sfz.local` or your preferred administrator email
 - `ADMIN_PASSWORD=<strong-password>`
 
@@ -48,7 +50,8 @@ Notes:
 2. Wait for the initial build and deploy to finish.
 3. Open the service’s public `onrender.com` URL.
 4. Update `APP_BASE_URL` to that exact public URL if you did not set it before deployment.
-5. Trigger a redeploy after changing `APP_BASE_URL`.
+5. Set `CLIENT_URL` to the same public URL.
+6. Trigger a redeploy after changing `APP_BASE_URL` or `CLIENT_URL`.
 
 This step matters because QR codes and public verification links are generated from `APP_BASE_URL`.
 
@@ -73,8 +76,9 @@ Reference: [Render custom domains docs](https://render.com/docs/custom-domains)
 After the custom domain is verified:
 
 1. Change `APP_BASE_URL` to the custom domain, for example `https://licenses.example.com`
-2. Redeploy the service
-3. Generate a fresh license PDF to confirm the QR points to the new public domain
+2. Change `CLIENT_URL` to the same domain
+3. Redeploy the service
+4. Generate a fresh license PDF to confirm the QR points to the new public domain
 
 ## 6. QR and Public Verification Testing
 
