@@ -1,5 +1,7 @@
 # SFZ System
 
+Smart system for managing companies and commercial licenses with QR verification.
+
 SFZ System is a production-oriented web platform for managing company registration, commercial license issuance and renewal, fee collection, PDF certificates, QR-based public verification, reporting, and role-based access control.
 
 ## Stack
