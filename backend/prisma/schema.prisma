@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  FINANCE
+  INSPECTOR
+  VIEWER
+}
+
+enum CompanyStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+  CLOSED
+}
+
+enum LicenseStatus {
+  ACTIVE
+  EXPIRED
+  PENDING_RENEWAL
+  SUSPENDED
+  REVOKED
+  DRAFT
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CARD
+  ONLINE
+  CHEQUE
+  OTHER
+}
+
+model User {
+  id               String           @id @default(cuid())
+  name             String
+  email            String           @unique
+  passwordHash     String
+  role             UserRole         @default(VIEWER)
+  isActive         Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  companiesCreated Company[]        @relation("CompanyCreator")
+  licensesCreated  License[]        @relation("LicenseCreator")
+  renewalsHandled  LicenseRenewal[] @relation("RenewalProcessor")
+  paymentsRecorded Payment[]        @relation("PaymentRecorder")
+  auditLogs        AuditLog[]
+}
+
+model Company {
+  id                 String        @id @default(cuid())
+  registrationNumber String        @unique
+  nameEn             String
+  nameAr             String?
+  ownerName          String
+  commercialActivity String?
+  email              String?
+  phone              String?
+  address            String?
+  city               String?
+  status             CompanyStatus @default(ACTIVE)
+  createdById        String
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  createdBy          User          @relation("CompanyCreator", fields: [createdById], references: [id])
+  licenses           License[]
+  payments           Payment[]
+
+  @@index([status])
+  @@index([nameEn])
+}
+
+model License {
+  id              String           @id @default(cuid())
+  licenseNumber   String           @unique
+  publicId        String           @unique @default(cuid())
+  companyId       String
+  issueDate       DateTime
+  expiryDate      DateTime
+  feeAmount       Decimal          @db.Decimal(10, 2)
+  status          LicenseStatus    @default(ACTIVE)
+  notes           String?
+  qrCodeUrl       String?
+  pdfPath         String?
+  lastGeneratedAt DateTime?
+  createdById     String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy       User             @relation("LicenseCreator", fields: [createdById], references: [id])
+  payments        Payment[]
+  renewals        LicenseRenewal[]
+
+  @@index([status])
+  @@index([expiryDate])
+}
+
+model LicenseRenewal {
+  id                 String   @id @default(cuid())
+  licenseId          String
+  previousExpiryDate DateTime
+  newExpiryDate      DateTime
+  amount             Decimal  @db.Decimal(10, 2)
+  notes              String?
+  renewedAt          DateTime @default(now())
+  processedById      String
+  license            License  @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  processedBy        User     @relation("RenewalProcessor", fields: [processedById], references: [id])
+
+  @@index([renewedAt])
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  companyId    String
+  licenseId    String?
+  amount       Decimal       @db.Decimal(10, 2)
+  currency     String        @default("LYD")
+  method       PaymentMethod
+  reference    String?
+  notes        String?
+  paymentDate  DateTime
+  recordedById String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  license      License?      @relation(fields: [licenseId], references: [id], onDelete: SetNull)
+  recordedBy   User          @relation("PaymentRecorder", fields: [recordedById], references: [id])
+
+  @@index([paymentDate])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+}

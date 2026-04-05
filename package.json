@@ -1,0 +1,27 @@
+{
+  "name": "sfz-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-ready company and commercial license management system",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace frontend && npm run prisma:generate --workspace backend",
+    "start": "npm run start --workspace backend",
+    "db:generate": "npm run prisma:generate --workspace backend",
+    "db:migrate": "npm run prisma:migrate --workspace backend",
+    "db:push": "npm run prisma:push --workspace backend",
+    "db:seed": "npm run prisma:seed --workspace backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

@@ -1,0 +1,14 @@
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+frontend/dist/
+backend/generated/
+.env
+.DS_Store
+*.log
+coverage/
+uploads/generated/**
+!uploads/generated/.gitkeep
+uploads/exports/**
+!uploads/exports/.gitkeep
+
