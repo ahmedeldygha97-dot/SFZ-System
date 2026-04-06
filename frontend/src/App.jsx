@@ -8,6 +8,7 @@ import LicensesPage from "./pages/LicensesPage";
 import PaymentsPage from "./pages/PaymentsPage";
 import UsersPage from "./pages/UsersPage";
 import ReportsPage from "./pages/ReportsPage";
+import SettingsPage from "./pages/SettingsPage";
 import PublicVerifyPage from "./pages/PublicVerifyPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
@@ -34,6 +35,9 @@ export default function App() {
           </Route>
           <Route element={<ProtectedRoute permission="user:view" />}>
             <Route path="/users" element={<UsersPage />} />
+          </Route>
+          <Route element={<ProtectedRoute permission="settings:view" />}>
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Route>
       </Route>

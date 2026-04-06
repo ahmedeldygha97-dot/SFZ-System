@@ -16,14 +16,21 @@ import { paymentsRouter } from "./routes/payments.routes.js";
 import { dashboardRouter } from "./routes/dashboard.routes.js";
 import { reportsRouter } from "./routes/reports.routes.js";
 import { publicRouter } from "./routes/public.routes.js";
+import { settingsRouter } from "./routes/settings.routes.js";
+import { backupsRouter } from "./routes/backups.routes.js";
+import { logsRouter } from "./routes/logs.routes.js";
+import { attachmentsRouter } from "./routes/attachments.routes.js";
 import { requireAuth } from "./middleware/auth.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendDistPath = path.resolve(__dirname, "../../frontend/dist");
+const uploadsPath = path.resolve(__dirname, "../../uploads");
 
 export const app = express();
+
+app.set("trust proxy", 1);
 
 app.use(
   helmet({
@@ -37,8 +44,8 @@ app.use(
     credentials: true
   })
 );
-app.use(express.json({ limit: "2mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 app.use(morgan(env.nodeEnv === "production" ? "combined" : "dev"));
 
 const authLimiter = rateLimit({
@@ -56,6 +63,10 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
+if (fs.existsSync(uploadsPath)) {
+  app.use("/uploads", express.static(uploadsPath));
+}
+
 app.use("/api/auth", authLimiter, authRouter);
 app.use("/api/public", publicRouter);
 app.use("/api/dashboard", requireAuth, dashboardRouter);
@@ -64,6 +75,10 @@ app.use("/api/users", requireAuth, usersRouter);
 app.use("/api/companies", requireAuth, companiesRouter);
 app.use("/api/licenses", requireAuth, licensesRouter);
 app.use("/api/payments", requireAuth, paymentsRouter);
+app.use("/api/settings", requireAuth, settingsRouter);
+app.use("/api/backups", requireAuth, backupsRouter);
+app.use("/api/logs", requireAuth, logsRouter);
+app.use("/api/attachments", requireAuth, attachmentsRouter);
 app.use("/api", notFoundHandler);
 
 if (fs.existsSync(frontendDistPath)) {

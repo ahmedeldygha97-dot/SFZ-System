@@ -1,4 +1,8 @@
+import { useTranslation } from "react-i18next";
+
 export default function Modal({ title, open, onClose, children, width = "max-w-3xl" }) {
+  const { t } = useTranslation();
+
   if (!open) {
     return null;
   }
@@ -13,7 +17,7 @@ export default function Modal({ title, open, onClose, children, width = "max-w-3
             onClick={onClose}
             className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600"
           >
-            Close
+            {t("common.close")}
           </button>
         </div>
 

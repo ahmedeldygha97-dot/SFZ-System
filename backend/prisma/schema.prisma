@@ -9,6 +9,7 @@ datasource db {
 enum UserRole {
   SUPER_ADMIN
   ADMIN
+  STAFF
   FINANCE
   INSPECTOR
   VIEWER
@@ -24,7 +25,7 @@ enum CompanyStatus {
 enum LicenseStatus {
   ACTIVE
   EXPIRED
-  PENDING_RENEWAL
+  EXPIRING_SOON
   SUSPENDED
   REVOKED
   DRAFT
@@ -39,20 +40,109 @@ enum PaymentMethod {
   OTHER
 }
 
+enum PaymentStatus {
+  PAID
+  PENDING
+  FAILED
+  REFUNDED
+}
+
+enum BackupType {
+  MANUAL
+  AUTO
+}
+
+enum BackupFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum BackupStatus {
+  READY
+  RESTORED
+  FAILED
+}
+
+enum AttachmentEntityType {
+  COMPANY
+  LICENSE
+}
+
+enum AttachmentCategory {
+  REGISTRATION
+  LICENSE
+  IDENTITY
+  CONTRACT
+  ADDRESS
+  OTHER
+}
+
+enum ActivityStatus {
+  SUCCESS
+  FAILED
+}
+
 model User {
-  id               String           @id @default(cuid())
-  name             String
-  email            String           @unique
-  passwordHash     String
-  role             UserRole         @default(VIEWER)
-  isActive         Boolean          @default(true)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  companiesCreated Company[]        @relation("CompanyCreator")
-  licensesCreated  License[]        @relation("LicenseCreator")
-  renewalsHandled  LicenseRenewal[] @relation("RenewalProcessor")
-  paymentsRecorded Payment[]        @relation("PaymentRecorder")
-  auditLogs        AuditLog[]
+  id                   String                @id @default(cuid())
+  name                 String
+  email                String                @unique
+  passwordHash         String
+  role                 UserRole              @default(VIEWER)
+  customPermissions    Json?
+  isActive             Boolean               @default(true)
+  failedLoginAttempts  Int                   @default(0)
+  lockedUntil          DateTime?
+  lastLoginAt          DateTime?
+  lastSeenAt           DateTime?
+  locale               String                @default("ar")
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  companiesCreated     Company[]             @relation("CompanyCreator")
+  licensesCreated      License[]             @relation("LicenseCreator")
+  renewalsHandled      LicenseRenewal[]      @relation("RenewalProcessor")
+  paymentsRecorded     Payment[]             @relation("PaymentRecorder")
+  attachmentsUploaded  Attachment[]          @relation("AttachmentUploader")
+  licenseStatusChanges LicenseStatusHistory[] @relation("LicenseStatusChanger")
+  backupsCreated       Backup[]              @relation("BackupCreator")
+  backupsRestored      Backup[]              @relation("BackupRestorer")
+  settingsUpdated      SystemSetting[]       @relation("SettingsUpdater")
+  auditLogs            AuditLog[]
+}
+
+model Role {
+  id            String           @id @default(cuid())
+  code          String           @unique
+  nameAr        String
+  nameEn        String
+  descriptionAr String?
+  descriptionEn String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  permissions   RolePermission[]
+}
+
+model Permission {
+  code          String           @id
+  module        String
+  nameAr        String
+  nameEn        String
+  descriptionAr String?
+  descriptionEn String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  roles         RolePermission[]
+}
+
+model RolePermission {
+  id             String     @id @default(cuid())
+  roleCode       String
+  permissionCode String
+  createdAt      DateTime   @default(now())
+  role           Role       @relation(fields: [roleCode], references: [code], onDelete: Cascade)
+  permission     Permission @relation(fields: [permissionCode], references: [code], onDelete: Cascade)
+
+  @@unique([roleCode, permissionCode])
 }
 
 model Company {
@@ -60,11 +150,19 @@ model Company {
   registrationNumber String        @unique
   nameEn             String
   nameAr             String?
+  tradeName          String?
+  legalForm          String?
   ownerName          String
+  managerName        String?
+  nationality        String?
+  address            String?
+  areaName           String?
+  buildingName       String?
+  premisesNumber     String?
   commercialActivity String?
+  notes              String?
   email              String?
   phone              String?
-  address            String?
   city               String?
   status             CompanyStatus @default(ACTIVE)
   createdById        String
@@ -73,34 +171,55 @@ model Company {
   createdBy          User          @relation("CompanyCreator", fields: [createdById], references: [id])
   licenses           License[]
   payments           Payment[]
+  attachments        Attachment[]
 
   @@index([status])
   @@index([nameEn])
 }
 
 model License {
-  id              String           @id @default(cuid())
-  licenseNumber   String           @unique
-  publicId        String           @unique @default(cuid())
+  id              String               @id @default(cuid())
+  licenseNumber   String               @unique
+  publicId        String               @unique @default(cuid())
   companyId       String
   issueDate       DateTime
   expiryDate      DateTime
-  feeAmount       Decimal          @db.Decimal(10, 2)
-  status          LicenseStatus    @default(ACTIVE)
+  durationMonths  Int?
+  issuingAuthority String?
+  activities      String?
+  feeAmount       Decimal              @db.Decimal(10, 2)
+  status          LicenseStatus        @default(ACTIVE)
   notes           String?
   qrCodeUrl       String?
   pdfPath         String?
   lastGeneratedAt DateTime?
+  suspendedAt     DateTime?
+  suspendedReason String?
   createdById     String
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  createdBy       User             @relation("LicenseCreator", fields: [createdById], references: [id])
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  company         Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy       User                 @relation("LicenseCreator", fields: [createdById], references: [id])
   payments        Payment[]
   renewals        LicenseRenewal[]
+  attachments     Attachment[]
+  statusHistory   LicenseStatusHistory[]
 
   @@index([status])
   @@index([expiryDate])
+}
+
+model LicenseStatusHistory {
+  id          String        @id @default(cuid())
+  licenseId   String
+  status      LicenseStatus
+  reason      String?
+  changedAt   DateTime      @default(now())
+  changedById String?
+  license     License       @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  changedBy   User?         @relation("LicenseStatusChanger", fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([licenseId, changedAt])
 }
 
 model LicenseRenewal {
@@ -119,35 +238,126 @@ model LicenseRenewal {
 }
 
 model Payment {
-  id           String        @id @default(cuid())
-  companyId    String
-  licenseId    String?
-  amount       Decimal       @db.Decimal(10, 2)
-  currency     String        @default("LYD")
-  method       PaymentMethod
-  reference    String?
-  notes        String?
-  paymentDate  DateTime
-  recordedById String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  license      License?      @relation(fields: [licenseId], references: [id], onDelete: SetNull)
-  recordedBy   User          @relation("PaymentRecorder", fields: [recordedById], references: [id])
+  id            String        @id @default(cuid())
+  receiptNumber String?       @unique
+  companyId     String
+  licenseId     String?
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("LYD")
+  method        PaymentMethod
+  status        PaymentStatus @default(PAID)
+  reference     String?
+  notes         String?
+  paymentDate   DateTime
+  recordedById  String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  license       License?      @relation(fields: [licenseId], references: [id], onDelete: SetNull)
+  recordedBy    User          @relation("PaymentRecorder", fields: [recordedById], references: [id])
 
   @@index([paymentDate])
+  @@index([status])
+}
+
+model Attachment {
+  id           String               @id @default(cuid())
+  entityType   AttachmentEntityType
+  category     AttachmentCategory   @default(OTHER)
+  companyId    String?
+  licenseId    String?
+  fileName     String
+  originalName String
+  mimeType     String
+  fileSize     Int
+  filePath     String
+  notes        String?
+  uploadedById String?
+  createdAt    DateTime             @default(now())
+  company      Company?             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  license      License?             @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  uploadedBy   User?                @relation("AttachmentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([entityType, companyId])
+  @@index([entityType, licenseId])
+}
+
+model Backup {
+  id           String          @id @default(cuid())
+  fileName     String
+  filePath     String
+  fileSize     Int
+  checksum     String
+  type         BackupType
+  frequency    BackupFrequency?
+  status       BackupStatus    @default(READY)
+  notes        String?
+  createdById  String?
+  restoredById String?
+  createdAt    DateTime        @default(now())
+  restoredAt   DateTime?
+  metadata     Json?
+  createdBy    User?           @relation("BackupCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  restoredBy   User?           @relation("BackupRestorer", fields: [restoredById], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}
+
+model SystemSetting {
+  id                          String          @id @default(cuid())
+  key                         String          @unique @default("default")
+  systemNameAr                String
+  systemNameEn                String
+  defaultLanguage             String          @default("ar")
+  dateFormat                  String          @default("dd/MM/yyyy")
+  timeZone                    String          @default("Africa/Tripoli")
+  themePreference             String          @default("light")
+  logoPath                    String?
+  printFooterAr               String?
+  printFooterEn               String?
+  contactEmail                String?
+  contactPhone                String?
+  contactWebsite              String?
+  verificationStatementAr     String?
+  verificationStatementEn     String?
+  printShowDualLogo           Boolean         @default(true)
+  autoBackupEnabled           Boolean         @default(false)
+  backupFrequency             BackupFrequency @default(WEEKLY)
+  backupRetentionCount        Int             @default(7)
+  backupLocation              String          @default("uploads/backups")
+  lastBackupAt                DateTime?
+  lastBackupStatus            BackupStatus?
+  sessionTimeoutMinutes       Int             @default(720)
+  passwordMinLength           Int             @default(8)
+  passwordRequireUppercase    Boolean         @default(true)
+  passwordRequireNumber       Boolean         @default(true)
+  passwordRequireSpecial      Boolean         @default(true)
+  lockoutAttempts             Int             @default(5)
+  lockoutDurationMinutes      Int             @default(15)
+  updatedById                 String?
+  createdAt                   DateTime        @default(now())
+  updatedAt                   DateTime        @updatedAt
+  updatedBy                   User?           @relation("SettingsUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
 }
 
 model AuditLog {
-  id         String   @id @default(cuid())
+  id         String         @id @default(cuid())
   userId     String?
+  userName   String?
+  userRole   String?
   action     String
   entityType String
   entityId   String?
+  targetName String?
+  ipAddress  String?
+  status     ActivityStatus @default(SUCCESS)
+  message    String?
   metadata   Json?
-  createdAt  DateTime @default(now())
-  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt  DateTime       @default(now())
+  user       User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
+  @@index([action])
   @@index([entityType, entityId])
+  @@index([status])
 }

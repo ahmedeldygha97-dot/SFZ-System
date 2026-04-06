@@ -20,22 +20,27 @@ router.get(
 
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    const weekStart = new Date(now);
+    weekStart.setDate(weekStart.getDate() - 7);
 
     const [
       companies,
       activeLicenses,
-      pendingRenewal,
+      expiredLicenses,
       expiringSoon,
       monthlyRevenue,
+      lastBackup,
       recentCompanies,
       recentLicenses,
-      recentPayments
+      recentPayments,
+      recentActivity
     ] = await Promise.all([
       prisma.company.count(),
       prisma.license.count({ where: { status: LicenseStatus.ACTIVE } }),
-      prisma.license.count({ where: { status: LicenseStatus.PENDING_RENEWAL } }),
+      prisma.license.count({ where: { status: LicenseStatus.EXPIRED } }),
       prisma.license.count({
         where: {
+          status: LicenseStatus.EXPIRING_SOON,
           expiryDate: {
             gte: now,
             lte: inThirtyDays
@@ -53,6 +58,9 @@ router.get(
           amount: true
         }
       }),
+      prisma.backup.findFirst({
+        orderBy: { createdAt: "desc" }
+      }),
       prisma.company.findMany({
         take: 5,
         orderBy: { createdAt: "desc" }
@@ -69,6 +77,15 @@ router.get(
           company: true,
           license: true
         }
+      }),
+      prisma.auditLog.findMany({
+        where: {
+          createdAt: {
+            gte: weekStart
+          }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 8
       })
     ]);
 
@@ -76,13 +93,15 @@ router.get(
       stats: {
         companies,
         activeLicenses,
-        pendingRenewal,
+        expiredLicenses,
         expiringSoon,
-        monthlyRevenue: monthlyRevenue._sum.amount ?? 0
+        monthlyRevenue: monthlyRevenue._sum.amount ?? 0,
+        lastBackupAt: lastBackup?.createdAt ?? null
       },
       recentCompanies,
       recentLicenses,
-      recentPayments
+      recentPayments,
+      recentActivity
     });
   })
 );

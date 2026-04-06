@@ -53,10 +53,21 @@ export function AuthProvider({ children }) {
     setUser(payload.user);
   }
 
-  function logout() {
-    localStorage.removeItem(STORAGE_KEY);
-    setToken("");
-    setUser(null);
+  async function logout() {
+    try {
+      if (token) {
+        await apiRequest("/auth/logout", {
+          method: "POST",
+          token
+        });
+      }
+    } catch {
+      // ignore network errors during logout cleanup
+    } finally {
+      localStorage.removeItem(STORAGE_KEY);
+      setToken("");
+      setUser(null);
+    }
   }
 
   const value = useMemo(
@@ -66,6 +77,7 @@ export function AuthProvider({ children }) {
       loading,
       login,
       logout,
+      setUser,
       isAuthenticated: Boolean(token && user),
       hasPermission: (permission) => user?.permissions?.includes(permission)
     }),

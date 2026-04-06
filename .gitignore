@@ -79,3 +79,11 @@ uploads/generated/**
 !uploads/generated/.gitkeep
 uploads/exports/**
 !uploads/exports/.gitkeep
+uploads/backups/**
+!uploads/backups/.gitkeep
+uploads/assets/**
+!uploads/assets/.gitkeep
+uploads/company-files/**
+!uploads/company-files/.gitkeep
+uploads/license-files/**
+!uploads/license-files/.gitkeep

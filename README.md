@@ -1,8 +1,18 @@
 # SFZ System
 
-Smart system for managing companies and commercial licenses with QR verification.
+SFZ System is a production-oriented web platform for managing company registration, commercial licensing, fee collection, PDF document generation, QR-based public verification, archived files, backups, and audit activity.
 
-SFZ System is a production-oriented web platform for managing company registration, commercial license issuance and renewal, fee collection, PDF certificates, QR-based public verification, reporting, and role-based access control.
+## Highlights
+
+- Arabic-first UI with persistent language switching and RTL/LTR layout support
+- React + Vite + Tailwind dashboard with role-based access control
+- Company registry with detailed legal/address fields and archived attachments
+- License issuance, editing, renewal, suspension/reactivation, status history, and public verification
+- Payment tracking with receipt PDF generation
+- Official-style PDF templates for company data, licenses, receipts, and reports
+- Settings module for general preferences, logo management, backups, and security policy
+- Automatic/manual JSON backup generation with restore validation
+- Audit trail with filters and CSV export
 
 ## Stack
 
@@ -12,25 +22,13 @@ SFZ System is a production-oriented web platform for managing company registrati
 - ORM: Prisma
 - Deployment: Render Blueprint (`render.yaml`)
 
-## Main Features
-
-- Secure JWT authentication with role-based permissions
-- Company registration and profile management
-- Commercial license issuance and renewal workflows
-- Payment and fee collection ledger
-- Dashboard and analytics reporting
-- Official PDF certificate generation with embedded QR verification
-- Public verification page for each license
-- Bilingual-ready UI with English and Arabic support
-- Deployment-ready structure for Render and GitHub
-
 ## Project Structure
 
 ```text
-backend/    Express API, Prisma schema, auth, PDF and QR services
-frontend/   React application, dashboard UI, public verification page
+backend/    Express API, Prisma schema, RBAC, PDF, QR, backup, audit modules
+frontend/   React dashboard, public verification page, Arabic/English UI
 docs/       Architecture and deployment documentation
-uploads/    Generated exports and PDFs
+uploads/    Generated PDFs, attachments, backup files, uploaded assets
 render.yaml Render Blueprint definition
 ```
 
@@ -54,13 +52,11 @@ render.yaml Render Blueprint definition
    npm run db:local:start
    ```
 
-   Then update `DATABASE_URL` in `.env` with the direct `postgres://...` URL shown by:
+4. Update `DATABASE_URL` in `.env` using the local Prisma Postgres URL shown by:
 
    ```bash
    npm run db:local:list
    ```
-
-4. Update `JWT_SECRET`, `APP_BASE_URL`, and the admin credentials in `.env`.
 
 5. Generate Prisma client, push the schema, and seed the administrator:
 
@@ -70,7 +66,7 @@ render.yaml Render Blueprint definition
    npm run db:seed
    ```
 
-6. Start the development servers:
+6. Start the app in development mode:
 
    ```bash
    npm run dev
@@ -78,32 +74,36 @@ render.yaml Render Blueprint definition
 
 7. Open:
 
-   - Frontend: `http://localhost:5173`
+   - Frontend dev server: `http://localhost:5173`
    - Backend health check: `http://localhost:5000/api/health`
-   - Production-style local app after `npm run build` + `npm start`: `http://localhost:5000`
 
-## Default Administrator
-
-The server auto-creates a bootstrap administrator when the database has no users.
-
-- Email: value of `ADMIN_EMAIL`
-- Password: value of `ADMIN_PASSWORD`
-
-## Production Build
+## Production-style Local Run
 
 ```bash
 npm run build
 npm start
 ```
 
-The backend serves the built frontend from `frontend/dist` in production and listens on `process.env.PORT`.
+Then open `http://localhost:5000`.
 
-## QR Verification Flow
+## Default Administrator
 
-- Each license receives a unique `publicId`
-- Public verification page path: `/verify/:publicId`
-- Backend public endpoint: `/api/public/licenses/:publicId`
-- Generated PDFs include a QR code pointing to `APP_BASE_URL/verify/:publicId`
+- Email: `admin@sfz.local`
+- Password: `Admin@123456`
+
+These values can be changed in `.env`.
+
+## Core Modules
+
+- Dashboard analytics
+- Companies
+- Licenses
+- Payments
+- Users and permissions
+- Settings
+- Backups and restore
+- Audit logs
+- Public verification
 
 ## Documentation
 

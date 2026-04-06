@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { prisma } from "../config/prisma.js";
 import { env } from "../config/env.js";
-import { getRolePermissions } from "../config/permissions.js";
+import { mergeUserPermissions } from "../config/permissions.js";
 import { createHttpError } from "../utils/httpError.js";
 
 export async function requireAuth(req, _res, next) {
@@ -23,10 +23,21 @@ export async function requireAuth(req, _res, next) {
       throw createHttpError(401, "Invalid or inactive account.");
     }
 
+    if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
+      throw createHttpError(423, "This account is temporarily locked.");
+    }
+
     req.user = {
       ...user,
-      permissions: getRolePermissions(user.role)
+      permissions: mergeUserPermissions(user.role, user.customPermissions)
     };
+
+    prisma.user
+      .update({
+        where: { id: user.id },
+        data: { lastSeenAt: new Date() }
+      })
+      .catch(() => null);
 
     next();
   } catch (error) {

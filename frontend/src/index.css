@@ -42,7 +42,7 @@
   }
 
   .page-subtitle {
-    @apply mt-2 max-w-2xl text-sm text-slate-500;
+    @apply mt-2 max-w-3xl text-sm leading-7 text-slate-500;
   }
 
   .field {
@@ -62,7 +62,7 @@
   }
 
   .data-table th {
-    @apply px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.18em] text-slate-400;
+    @apply px-4 py-3 text-start text-xs font-bold uppercase tracking-[0.14em] text-slate-400;
   }
 
   .data-table td {

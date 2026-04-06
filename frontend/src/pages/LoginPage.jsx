@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Globe, LockKeyhole, Mail } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import logo from "/src/assets/images/logo.png";
 import { useAuth } from "../context/AuthContext";
+import { useSystem } from "../context/SystemContext";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { login, isAuthenticated } = useAuth();
+  const { logoSrc, systemName, language, setLanguage } = useSystem();
   const [form, setForm] = useState({
     email: "admin@sfz.local",
     password: "Admin@123456"
@@ -42,34 +43,34 @@ export default function LoginPage() {
           <div className="overflow-hidden rounded-[36px] bg-[#12324f] p-8 text-white shadow-panel lg:p-10">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <img src={logo} alt="SFZ logo" className="h-16 w-16 rounded-[22px] bg-white object-contain p-2" />
+                <img src={logoSrc} alt="SFZ logo" className="h-16 w-16 rounded-[22px] bg-white object-contain p-2" />
                 <div>
                   <p className="text-xs uppercase tracking-[0.28em] text-brand-200">SFZ</p>
-                  <h1 className="text-3xl font-black">{t("appName")}</h1>
+                  <h1 className="text-2xl font-black leading-tight">{systemName}</h1>
                 </div>
               </div>
 
               <button
                 type="button"
-                onClick={() => i18n.changeLanguage(i18n.language === "ar" ? "en" : "ar")}
+                onClick={() => setLanguage(language === "ar" ? "en" : "ar")}
                 className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold text-white"
               >
                 <Globe size={16} />
-                {i18n.language === "ar" ? "English" : "العربية"}
+                {language === "ar" ? "English" : "العربية"}
               </button>
             </div>
 
             <div className="mt-16 max-w-xl">
-              <p className="text-xs uppercase tracking-[0.3em] text-brand-200">Digital Registry Platform</p>
-              <h2 className="mt-5 text-5xl font-black leading-[1.05]">{t("loginTitle")}</h2>
-              <p className="mt-5 text-lg text-slate-200">{t("loginSubtitle")}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-brand-200">SFZ</p>
+              <h2 className="mt-5 text-5xl font-black leading-[1.1]">{t("login.title")}</h2>
+              <p className="mt-5 text-lg text-slate-200">{t("login.subtitle")}</p>
             </div>
 
             <div className="mt-12 grid gap-4 sm:grid-cols-3">
               {[
-                { label: "Secure JWT access", value: "RBAC" },
-                { label: "Instant PDF output", value: "Puppeteer" },
-                { label: "Public QR check", value: "Live verify" }
+                { label: t("login.features.access"), value: "RBAC" },
+                { label: t("login.features.pdf"), value: "PDF" },
+                { label: t("login.features.qr"), value: "QR" }
               ].map((item) => (
                 <div key={item.label} className="rounded-[24px] bg-white/10 p-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-brand-200">{item.value}</p>
@@ -81,14 +82,14 @@ export default function LoginPage() {
 
           <div className="rounded-[36px] bg-white/90 p-8 shadow-panel backdrop-blur lg:p-10">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand-600">Sign in</p>
-              <h3 className="mt-3 text-3xl font-black text-ink-900">Welcome back</h3>
-              <p className="mt-3 text-sm text-slate-500">Use the seeded administrator account or your assigned credentials.</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand-600">{t("common.signIn")}</p>
+              <h3 className="mt-3 text-3xl font-black text-ink-900">{t("login.welcome")}</h3>
+              <p className="mt-3 text-sm text-slate-500">{t("login.helper")}</p>
             </div>
 
             <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
               <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-slate-700">{t("email")}</span>
+                <span className="mb-2 block text-sm font-semibold text-slate-700">{t("common.email")}</span>
                 <div className="relative">
                   <Mail className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
@@ -101,7 +102,7 @@ export default function LoginPage() {
               </label>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-slate-700">{t("password")}</span>
+                <span className="mb-2 block text-sm font-semibold text-slate-700">{t("common.password")}</span>
                 <div className="relative">
                   <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
@@ -116,7 +117,7 @@ export default function LoginPage() {
               {error ? <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</div> : null}
 
               <button type="submit" disabled={loading} className="primary-btn w-full">
-                {loading ? "Signing in..." : t("signIn")}
+                {loading ? t("login.signingIn") : t("common.signIn")}
               </button>
             </form>
           </div>
